@@ -1,0 +1,5 @@
+.idea/
+__pycache__/
+venv/
+www.csdn.net.sql
+plaintxt_yahoo.txt
