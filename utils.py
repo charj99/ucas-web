@@ -4,11 +4,13 @@ INPUTFILE_CSDN = "www.csdn.net.sql"
 def getPattern(passwd, nChrDict):
     pattern = ""
     lstType = "S" # magic begin
-    curType = ""
-    for letter in passwd:
-        if str.isdigit(letter):
+    curTpype = ""
+    n = len(passwd)
+    for i in range(n):
+        letter = passwd[i : i + 1]
+        if bytes.isdigit(letter):
             curType = "D"
-        elif str.isalpha(letter):
+        elif bytes.isalpha(letter):
             curType = "A"
         else:
             curType = "N"
@@ -43,3 +45,5 @@ def printNChars(nChars, prefix):
     for key, value in nChars:
         outf.write("%s %d\n" % (key, value))
     outf.close()
+
+

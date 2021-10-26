@@ -1,7 +1,7 @@
 from utils import *
 class CSDN(object):
     def __init__(self):
-        inf = open(INPUTFILE_CSDN, "r", encoding="unicode-esacpe")
+        inf = open(INPUTFILE_CSDN, "rb")
         self.lines = inf.readlines()
         inf.close()
         self.patterns = {}
@@ -12,7 +12,7 @@ class CSDN(object):
         self.patterns.clear()
         self.nChars.clear()
         for line in self.lines:
-            tuple = line[:-1].split(" # ")
+            tuple = line[:-2].split(b" # ")
             passwd = tuple[1]
             pattern = getPattern(passwd, self.nChars)
             self.patterns.setdefault(pattern, 0)
