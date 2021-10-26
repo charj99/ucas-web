@@ -1,5 +1,10 @@
+import re
+
 INPUTFILE_YAHOO = "plaintxt_yahoo.txt"
 INPUTFILE_CSDN = "www.csdn.net.sql"
+
+SEPERATOR_YAHOO = b":"
+SEPERATOR_CSDN = b" # "
 
 def getPattern(passwd, nChrDict):
     pattern = ""
@@ -46,4 +51,20 @@ def printNChars(nChars, prefix):
         outf.write("%s %d\n" % (key, value))
     outf.close()
 
+def printPinyin(pinyin, userNums, prefix):
+    outf = open(prefix + "-pinyin.txt", "w")
+    outf.write("%d/%d use pinyin in password\n\n" % (len(pinyin), userNums))
+    outf.write("-" * 40 + "\n")
+    for item in pinyin:
+        outf.write("%s\n" % item)
+    outf.close()
 
+def usePinyin(passwd, pyt):
+    flag = False
+
+    # get word part of passwd
+    words = re.findall(rb"[a-z]+", passwd, re.I)
+    for word in words:
+        tokens, succ = pyt.scan(word)
+        flag |= succ
+    return flag

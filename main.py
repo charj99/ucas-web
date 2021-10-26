@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
 # TODO: 用户名、邮箱和 passwd 关系分析
 
-    solver.analyzeComponent()
-        # solver.analyzeKeyboard()
-        # solver.analyzePinyin()
+    # solver.analyzeComponent()
+    # solver.analyzeKeyboard()
+    solver.analyzePinyin()
 
