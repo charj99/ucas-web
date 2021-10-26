@@ -1,10 +1,15 @@
 import re
+from nltk.corpus import names, words
 
 INPUTFILE_YAHOO = "plaintxt_yahoo.txt"
 INPUTFILE_CSDN = "www.csdn.net.sql"
 
 SEPERATOR_YAHOO = b":"
 SEPERATOR_CSDN = b" # "
+
+WORDS = words.words("en")
+NAMES = names.words("male.txt") + names.words("female.txt")
+ECHO = 1000
 
 def getPattern(passwd, nChrDict):
     pattern = ""
@@ -59,6 +64,14 @@ def printPinyin(pinyin, userNums, prefix):
         outf.write("%s\n" % item)
     outf.close()
 
+def useSingleWord(word):
+    s = bytes.decode(word).lower()
+    return s in WORDS
+
+def useName(word):
+    s = bytes.decode(word).lower()
+    return s in NAMES
+
 def usePinyin(passwd, pyt):
     flag = False
 
@@ -66,5 +79,9 @@ def usePinyin(passwd, pyt):
     words = re.findall(rb"[a-z]+", passwd, re.I)
     for word in words:
         tokens, succ = pyt.scan(word)
+        if succ:
+            succ &= (not useSingleWord(word))
+        if succ:
+            succ &= (not useName(word))
         flag |= succ
     return flag
