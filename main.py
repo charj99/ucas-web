@@ -22,13 +22,9 @@ if __name__ == '__main__':
         elif opt == "-c":
             solver = CSDN()
 
-    WORDS = words.words("en")
-    NAMES = names.words("male.txt") + names.words("female.txt")
-    WORDS = [x.lower() for x in WORDS]
-    NAMES = [x.lower() for x in NAMES]
 
     # TODO: 用户名、邮箱和 passwd 关系分析
     # solver.analyzeComponent()
     # solver.analyzeKeyboard()
-    solver.analyzePinyin(WORDS, NAMES)
+    solver.analyzePinyin()
 

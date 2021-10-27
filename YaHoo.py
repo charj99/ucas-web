@@ -1,69 +1,15 @@
-from utils import *
-from trie import *
-import time, sys
+from base import Base
+from base import INPUTFILE_YAHOO, SEPERATOR_YAHOO
 
-class YaHoo(object):
+class YaHoo(Base):
     def __init__(self):
-        self.id = "YaHoo"
-        inf = open(INPUTFILE_YAHOO, "rb")
-        self.lines = inf.readlines()
-        inf.close()
-
-        self.patterns = {}
-        self.nChars = {} # unkown characters used in passwd
-
-        self.pinyinPasswd = set([])
-        self.pyt = PyTrie()
-        self.pyt.setup()
-        self.pinyins = {}
-        self.words = {}
+        super().__init__("YaHoo", INPUTFILE_YAHOO)
 
     def getPasswd(self, line):
         return line[:-2].split(SEPERATOR_YAHOO)[-1]
 
     def analyzeComponent(self):
-        self.patterns.clear()
-        self.nChars.clear()
+        super().analyzeComponent()
 
-        n = len(self.lines)
-        for idx, line in enumerate(self.lines):
-            passwd = self.getPasswd(line)
-            pattern = getPattern(passwd, self.nChars)
-
-            self.patterns.setdefault(pattern, 0)
-            self.patterns[pattern] += 1
-
-            if idx % ECHO == 0:
-                sys.stdout.write("\rprocessed %d/%d" % (idx, n))
-                sys.stdout.flush()
-                time.sleep(0.1)
-
-        self.patterns = sortByValue(self.patterns)
-        printPatterns(self.patterns, self.id)
-
-        self.nChars = sortByValue(self.nChars)
-        printNChars(self.nChars, self.id)
-
-    def analyzePinyin(self, WORDS, NAMES):
-        self.pinyinPasswd.clear()
-        self.pinyins.clear()
-        self.words.clear()
-        n = len(self.lines)
-        for idx, line in enumerate(self.lines):
-            passwd = self.getPasswd(line)
-
-            if usePinyinOrWord(passwd, self.pyt, self.pinyins, self.words, WORDS, NAMES):
-                self.pinyinPasswd.add(line[:-2])
-
-            if idx % ECHO == 0:
-                sys.stdout.write("\rprocessed %d/%d" % (idx, n))
-                sys.stdout.flush()
-                time.sleep(0.1)
-
-        self.pinyins = sortByValue(self.pinyins)
-        printPinyinOrWords(self.pinyins, "pinyins", self.id)
-
-        self.words = sortByValue(self.words)
-        printPinyinOrWords(self.words, "words", self.id)
-
-        # printPinyinPasswd(self.pinyinPasswd, len(self.lines), self.id)
+    def analyzePinyin(self):
+        super().analyzePinyin()

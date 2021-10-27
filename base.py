@@ -1,4 +1,8 @@
 import re
+from abc import ABCMeta, abstractmethod
+import sys, time
+from trie import PyTrie
+from nltk.corpus import words, names
 
 INPUTFILE_YAHOO = "plaintxt_yahoo.txt"
 INPUTFILE_CSDN = "www.csdn.net.sql"
@@ -95,3 +99,75 @@ def usePinyinOrWord(passwd, pyt, pinyins, words, WORDS, NAMES):
             pinyins.setdefault(word, 0)
             pinyins[word] += 1
     return flag
+
+
+class Base(object, metaclass=ABCMeta):
+    WORDS = [x.lower() for x in words.words("en")]
+    NAMES = [x.lower() for x in (names.words("male.txt") + names.words("female.txt"))]
+    def __init__(self, id, inputfile):
+        self.id = id
+        inf = open(inputfile, "rb")
+        self.lines = inf.readlines()
+        inf.close()
+
+        self.patterns = {}
+        self.nChars = {}  # unkown characters used in passwd
+
+        self.pinyinPasswd = set([])
+        self.pyt = PyTrie()
+        self.pyt.setup()
+        self.pinyins = {}
+        self.words = {}
+
+    @abstractmethod
+    def getPasswd(self, line):
+        pass
+
+    def analyzeComponent(self):
+        self.patterns.clear()
+        self.nChars.clear()
+
+        n = len(self.lines)
+        for idx, line in enumerate(self.lines):
+            passwd = self.getPasswd(line)
+            pattern = getPattern(passwd, self.nChars)
+
+            self.patterns.setdefault(pattern, 0)
+            self.patterns[pattern] += 1
+
+            if idx % ECHO == 0:
+                sys.stdout.write("\rprocessed %d/%d" % (idx, n))
+                sys.stdout.flush()
+                time.sleep(0.1)
+
+        self.patterns = sortByValue(self.patterns)
+        printPatterns(self.patterns, self.id)
+
+        self.nChars = sortByValue(self.nChars)
+        printNChars(self.nChars, self.id)
+
+    def analyzePinyin(self):
+        self.pinyinPasswd.clear()
+        self.pinyins.clear()
+        self.words.clear()
+        n = len(self.lines)
+        for idx, line in enumerate(self.lines):
+            passwd = self.getPasswd(line)
+
+            if usePinyinOrWord(passwd, self.pyt, self.pinyins, self.words, \
+                               Base.WORDS, Base.NAMES):
+                self.pinyinPasswd.add(line[:-2])
+
+            if idx % ECHO == 0:
+                sys.stdout.write("\rprocessed %d/%d" % (idx, n))
+                sys.stdout.flush()
+                time.sleep(0.1)
+
+        self.pinyins = sortByValue(self.pinyins)
+        printPinyinOrWords(self.pinyins, "pinyins", self.id)
+
+        self.words = sortByValue(self.words)
+        printPinyinOrWords(self.words, "words", self.id)
+
+        printPinyinPasswd(self.pinyinPasswd, len(self.lines), self.id)
+
