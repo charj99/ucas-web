@@ -30,7 +30,7 @@ if __name__ == '__main__':
         5. calculate other sequences,       and save to "YaHoo/CSDD-specials.txt"
         6. caluclate diffent email types,   and save to "YaHoo/CSDN-emails.txt"
     '''
-    solver.analyzeComponent()
+    # solver.analyzeComponent()
 
     '''
         1. calculate different pinyins,     and save to "YaHoo/CSDN-pinyins.txt"
@@ -42,5 +42,5 @@ if __name__ == '__main__':
         1. calculate how many password are the same as id or email, 
             and save to "YaHoo/relations.txt"
     '''
-    # solver.analyzeRelation()
+    solver.analyzeRelation()
 

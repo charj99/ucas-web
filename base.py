@@ -251,7 +251,7 @@ class Base(object, metaclass=ABCMeta):
                 sys.stdout.flush()
                 time.sleep(0.1)
 
-            outf = open(self.id + "-relations.txt")
-            outf.write("%d/%d use \temail as password\n" % (emailCount, n))
-            outf.write("%d/%d use \tid as password\n" % (idCount, n))
+            outf = open(self.id + "-relations.txt", "w")
+            outf.write("%d/%d use email as password\n" % (emailCount, n))
+            outf.write("%d/%d use id as password\n" % (idCount, n))
             outf.close()
