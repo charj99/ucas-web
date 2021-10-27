@@ -8,8 +8,17 @@ class CSDN(Base):
     def getPasswd(self, line):
         return line[:-2].split(SEPERATOR_CSDN)[1]
 
+    def getFullEmail(self, line):
+        return line[:-2].split(SEPERATOR_CSDN)[2]
+
+    def getId(self, line):
+        return line[:-2].split(SEPERATOR_CSDN)[0]
+
     def analyzeComponent(self):
         super().analyzeComponent()
 
     def analyzePinyin(self):
         super().analyzePinyin()
+
+    def analyzeRelation(self):
+        super().analyzeRelation()

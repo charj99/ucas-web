@@ -12,10 +12,15 @@ SEPERATOR_CSDN = b" # "
 
 ECHO = 1000
 
-def getPattern(passwd, nChrDict):
+def inc(dict, key):
+    dict.setdefault(key, 0)
+    dict[key] += 1
+
+def getPattern(passwd, digitals, chars, specials):
     pattern = ""
     lstType = "S" # magic begin
-    curTpype = ""
+    lstPos = -1
+    # curTpype = ""
     n = len(passwd)
     for i in range(n):
         letter = passwd[i : i + 1]
@@ -25,10 +30,18 @@ def getPattern(passwd, nChrDict):
             curType = "A"
         else:
             curType = "N"
-            nChrDict.setdefault(letter, 0)
-            nChrDict[letter] += 1
         if curType != lstType:
-            pattern += curType
+            if lstType != "S":
+                pattern += lstType + str(i - lstPos) + " "
+                sequence = passwd[lstPos : i]
+                if lstType == "D":
+                    inc(digitals, sequence)
+                elif lstType == "A":
+                    inc(chars, sequence)
+                else:
+                    inc(specials, sequence)
+            lstPos = i
+
         lstType = curType
 
     # if "N" in pattern:
@@ -48,12 +61,12 @@ def printPatterns(patterns, prefix):
         outf.write("%s %d\n" % (key, value))
     outf.close()
 
-def printNChars(nChars, prefix):
-    outf = open(prefix + "-unknowCharacters.txt", "w")
-    outf.write("different unknow characters: %d\n\n" % len(nChars))
-    outf.write("<character> <times>\n")
+def printRank(dict, type, prefix):
+    outf = open(prefix + "-%s.txt" % type, "w")
+    outf.write("different %s: %d\n\n" % (type, len(dict)))
+    outf.write("<%s> <times>\n" % type)
     outf.write("-" * 40 + "\n")
-    for key, value in nChars:
+    for key, value in dict:
         outf.write("%s %d\n" % (key, value))
     outf.close()
 
@@ -63,14 +76,6 @@ def printPinyinPasswd(passwds, userNums, prefix):
     outf.write("-" * 40 + "\n")
     for item in passwds:
         outf.write("%s\n" % item)
-    outf.close()
-
-def printPinyinOrWords(pinWords, type, prefix):
-    outf = open(prefix + "-%s.txt" % type, "w")
-    outf.write("different %s: %d\n\n" % (type, len(pinWords)))
-    outf.write("-" * 40 + "\n")
-    for key, value in pinWords:
-        outf.write("%s %d\n" % (key, value))
     outf.close()
 
 def useSingleWord(word, WORDS):
@@ -89,17 +94,20 @@ def usePinyinOrWord(passwd, pyt, pinyins, words, WORDS, NAMES):
     for word in wordsInPasswd:
         if useSingleWord(word, WORDS) or useName(word, NAMES):
             if len(word) > 1:
-                words.setdefault(word, 0)
-                words[word] += 1
+                inc(words, word)
             continue
 
         tokens, succ = pyt.scan(word)
         if succ and (len(tokens) > 1):
             flag = True
-            pinyins.setdefault(word, 0)
-            pinyins[word] += 1
+            inc(pinyins, word)
     return flag
 
+def useEmail(passwd, email):
+    return passwd == email
+
+def useId(passwd, id):
+    return passwd == id
 
 class Base(object, metaclass=ABCMeta):
     WORDS = [x.lower() for x in words.words("en")]
@@ -110,64 +118,140 @@ class Base(object, metaclass=ABCMeta):
         self.lines = inf.readlines()
         inf.close()
 
-        self.patterns = {}
-        self.nChars = {}  # unkown characters used in passwd
-
-        self.pinyinPasswd = set([])
         self.pyt = PyTrie()
         self.pyt.setup()
-        self.pinyins = {}
-        self.words = {}
+
+        self.passwds = {}
+
 
     @abstractmethod
     def getPasswd(self, line):
         pass
 
+    @abstractmethod
+    def getFullEmail(self, line):
+        pass
+
+    def getEmail(self, line):
+        return self.getFullEmail(line).split(b"@")[0]
+
+    def getEmailType(self, line):
+        emailAndType = self.getFullEmail(line).split(b"@")
+        if len(emailAndType) <= 1:
+            return b""
+        else:
+            return emailAndType[1]
+
+    @abstractmethod
+    def getId(self, line):
+        pass
+
+    '''
+        1. calculate different passwords,   and save to "YaHoo/CSDN-passwords.txt"
+        2. calculate password patterns,     and save to "YaHoo/CSDN-patterns.txt"
+        3. calculate digital sequences,     and save to "YaHoo/CSDN-digits.txt"
+        4. calculate character sequences,   and save to "YaHoo/CSDN-characters.txt"
+        5. calculate other sequences,       and save to "YaHoo/CSDD-specials.txt"
+        6. caluclate diffent email types,   and save to "YaHoo/CSDN-emails.txt"
+    '''
     def analyzeComponent(self):
-        self.patterns.clear()
-        self.nChars.clear()
+        passwds = {}
+
+        patterns = {}
+
+        digitals = {}
+        chars = {}
+        specials = {}
+
+        emails = {}
 
         n = len(self.lines)
         for idx, line in enumerate(self.lines):
             passwd = self.getPasswd(line)
-            pattern = getPattern(passwd, self.nChars)
+            inc(passwds, passwd)
 
-            self.patterns.setdefault(pattern, 0)
-            self.patterns[pattern] += 1
+            email = self.getEmailType(line)
+            inc(emails, email)
+
+            pattern = getPattern(passwd, digitals, chars, specials)
+            inc(patterns, pattern)
 
             if idx % ECHO == 0:
                 sys.stdout.write("\rprocessed %d/%d" % (idx, n))
                 sys.stdout.flush()
                 time.sleep(0.1)
 
-        self.patterns = sortByValue(self.patterns)
-        printPatterns(self.patterns, self.id)
+        passwds = sortByValue(passwds)
+        printRank(passwds, "passwords",self.id)
 
-        self.nChars = sortByValue(self.nChars)
-        printNChars(self.nChars, self.id)
+        patterns = sortByValue(patterns)
+        printPatterns(patterns, self.id)
 
+        digitals = sortByValue(digitals)
+        printRank(digitals, "digits",self.id)
+
+        chars = sortByValue(chars)
+        printRank(chars, "chars", self.id)
+
+        specials = sortByValue(specials)
+        printRank(specials, "specials", self.id)
+
+        emails = sortByValue(emails)
+        printRank(emails, "emails", self.id)
+
+    '''
+        1. calculate different pinyins,     and save to "YaHoo/CSDN-pinyins.txt"
+        2. calculate different words,       and save to "YaHoo/CSDN-words.txt"
+    '''
     def analyzePinyin(self):
-        self.pinyinPasswd.clear()
-        self.pinyins.clear()
-        self.words.clear()
+        pinyinPasswd = set([])
+        pinyins = {}
+        words = {}
         n = len(self.lines)
         for idx, line in enumerate(self.lines):
             passwd = self.getPasswd(line)
 
-            if usePinyinOrWord(passwd, self.pyt, self.pinyins, self.words, \
+            if usePinyinOrWord(passwd, self.pyt, pinyins, words, \
                                Base.WORDS, Base.NAMES):
-                self.pinyinPasswd.add(line[:-2])
+                pinyinPasswd.add(line[:-2])
 
             if idx % ECHO == 0:
                 sys.stdout.write("\rprocessed %d/%d" % (idx, n))
                 sys.stdout.flush()
                 time.sleep(0.1)
 
-        self.pinyins = sortByValue(self.pinyins)
-        printPinyinOrWords(self.pinyins, "pinyins", self.id)
+        pinyins = sortByValue(pinyins)
+        printRank(pinyins, "pinyins", self.id)
 
-        self.words = sortByValue(self.words)
-        printPinyinOrWords(self.words, "words", self.id)
+        words = sortByValue(words)
+        printRank(words, "words", self.id)
 
-        printPinyinPasswd(self.pinyinPasswd, len(self.lines), self.id)
+        printPinyinPasswd(pinyinPasswd, len(self.lines), self.id)
 
+    '''
+        1. calculate how many password are the same as id or email, 
+            and save to "YaHoo/relations.txt"
+    '''
+    def analyzeRelation(self):
+        emailCount = 0
+        idCount = 0
+        n = len(self.lines)
+        for idx, line in enumerate(self.lines):
+            passwd = self.getPasswd(line)
+            email = self.getEmail(line)
+            id = self.getId(line)
+
+            if useEmail(passwd, email):
+                emailCount += 1
+            if useId(passwd, id):
+                idCount += 1
+
+            if idx % ECHO == 0:
+                sys.stdout.write("\rprocessed %d/%d" % (idx, n))
+                sys.stdout.flush()
+                time.sleep(0.1)
+
+            outf = open(self.id + "-relations.txt")
+            outf.write("%d/%d use \temail as password\n" % (emailCount, n))
+            outf.write("%d/%d use \tid as password\n" % (idCount, n))
+            outf.close()
