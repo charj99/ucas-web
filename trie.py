@@ -57,6 +57,5 @@ class PyTrie(object):
                 flag = False
                 words.append(b'invalid:' + sent[0:1])
                 sent = sent[1:]
-        flag &= (count > 1)
         return words, flag
 

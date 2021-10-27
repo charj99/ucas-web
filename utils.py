@@ -1,5 +1,4 @@
 import re
-from nltk.corpus import names, words
 
 INPUTFILE_YAHOO = "plaintxt_yahoo.txt"
 INPUTFILE_CSDN = "www.csdn.net.sql"
@@ -7,8 +6,6 @@ INPUTFILE_CSDN = "www.csdn.net.sql"
 SEPERATOR_YAHOO = b":"
 SEPERATOR_CSDN = b" # "
 
-WORDS = words.words("en")
-NAMES = names.words("male.txt") + names.words("female.txt")
 ECHO = 1000
 
 def getPattern(passwd, nChrDict):
@@ -56,32 +53,45 @@ def printNChars(nChars, prefix):
         outf.write("%s %d\n" % (key, value))
     outf.close()
 
-def printPinyin(pinyin, userNums, prefix):
-    outf = open(prefix + "-pinyin.txt", "w")
-    outf.write("%d/%d use pinyin in password\n\n" % (len(pinyin), userNums))
+def printPinyinPasswd(passwds, userNums, prefix):
+    outf = open(prefix + "-pinyinPasswords.txt", "w")
+    outf.write("%d/%d use pinyin in password\n\n" % (len(passwds), userNums))
     outf.write("-" * 40 + "\n")
-    for item in pinyin:
+    for item in passwds:
         outf.write("%s\n" % item)
     outf.close()
 
-def useSingleWord(word):
+def printPinyinOrWords(pinWords, type, prefix):
+    outf = open(prefix + "-%s.txt" % type, "w")
+    outf.write("different %s: %d\n\n" % (type, len(pinWords)))
+    outf.write("-" * 40 + "\n")
+    for key, value in pinWords:
+        outf.write("%s %d\n" % (key, value))
+    outf.close()
+
+def useSingleWord(word, WORDS):
     s = bytes.decode(word).lower()
     return s in WORDS
 
-def useName(word):
+def useName(word, NAMES):
     s = bytes.decode(word).lower()
     return s in NAMES
 
-def usePinyin(passwd, pyt):
+def usePinyinOrWord(passwd, pyt, pinyins, words, WORDS, NAMES):
     flag = False
 
     # get word part of passwd
-    words = re.findall(rb"[a-z]+", passwd, re.I)
-    for word in words:
+    wordsInPasswd = re.findall(rb"[a-z]+", passwd, re.I)
+    for word in wordsInPasswd:
+        if useSingleWord(word, WORDS) or useName(word, NAMES):
+            if len(word) > 1:
+                words.setdefault(word, 0)
+                words[word] += 1
+            continue
+
         tokens, succ = pyt.scan(word)
-        if succ:
-            succ &= (not useSingleWord(word))
-        if succ:
-            succ &= (not useName(word))
-        flag |= succ
+        if succ and (len(tokens) > 1):
+            flag = True
+            pinyins.setdefault(word, 0)
+            pinyins[word] += 1
     return flag
