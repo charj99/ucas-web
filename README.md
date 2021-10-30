@@ -45,4 +45,4 @@ ucas web homework: password analysis
 ---
 ## TODO
 * Visualize the data!
-* Maybe add multi-processing for anaylyzePinyin, which is fucking too slow
+* Maybe add multi-processing for anaylyzePinyin, which is too slow
